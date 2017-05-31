@@ -16,11 +16,23 @@ int y_adjust = 160;
 
 // Background
 PImage background;
+PImage cloud_left;
+PImage cloud_right;
+float cloud_left_x;
+float cloud_right_x;
+
+// Goku
 PImage left_arm;
 PImage right_arm;
 PImage left_leg;
 PImage right_leg;
 PImage body;
+
+// Mercenary Tao
+PImage tao_left;
+PImage tao_right;
+boolean tao_left_bool = false;
+boolean tao_right_bool = false;
 
 PImage current_frame;
 
@@ -55,11 +67,20 @@ void setup() {
   size(1024, 576);
   // Background
   background = loadImage("./img/background.png");
+  cloud_left = loadImage("./img/cloud-left.png");
+  cloud_right = loadImage("./img/cloud-right.png");
+  cloud_left_x = 0;
+  cloud_right_x = width;
+
+  // Goku
   left_arm = loadImage("./img/left-arm.png");
   right_arm = loadImage("./img/right-arm.png");
   left_leg = loadImage("./img/left-leg.png");
   right_leg = loadImage("./img/right-leg.png");
   body = loadImage("./img/body.png");
+  // Mercenary Tao
+  tao_left = loadImage("./img/tao-left.png");
+  tao_right = loadImage("./img/tao-right.png");
   // Fill colour
   fill(161, 233, 91);
   stroke(161, 233, 91);
@@ -70,6 +91,17 @@ void setup() {
   // Play the movie one time, no looping
   m.play();
 } 
+
+
+void drawBackground() {
+  image(background, 0, 0, 1024, 576);
+  cloud_left_x += 1.5;
+  cloud_right_x -= 1.5;
+  for (int i = 0; i < 2; i++) {
+    image(cloud_left, cloud_left_x + (i * 400) - 600, 40 + (i * 180), cloud_left.width / 2, cloud_left.height / 2);
+    image(cloud_right, cloud_right_x + (i * 400), 120 + (i * 180), cloud_right.width * 0.7, cloud_right.height * 0.7);
+  }
+}
 
 
 boolean pixel_within_range(color px) {
@@ -137,7 +169,7 @@ void draw() {
       
       binariseImage();
       
-      image(background, 0, 0, 1024, 576);
+      drawBackground();
       
       ArrayList<Score<Integer, Integer, Integer>> block_scores = new ArrayList<Score<Integer, Integer, Integer>>();
       
@@ -219,27 +251,9 @@ void draw() {
         curr_top_block_scores.remove(legs_indexes[0]);
       }
       
-      //delay(10);
-      // draw legs
-      if (curr_legs.get(0).x < curr_legs.get(1).x) {
-        image(left_leg, ((int)curr_legs.get(0).x + x_adjust + (int)curr_top_block_scores.get(0).x + 50 + x_adjust) / 2, (int)curr_legs.get(0).y + y_adjust, left_leg.width * 0.5, left_leg.height * 0.5);
-        image(right_leg, (((int)curr_legs.get(1).x + x_adjust + (int)curr_top_block_scores.get(0).x + x_adjust) / 2) + 100, (int)curr_legs.get(1).y + y_adjust, right_leg.width * 0.5, right_leg.height * 0.5);
-      } else {
-        image(left_leg, ((int)curr_legs.get(1).x + x_adjust + (int)curr_top_block_scores.get(0).x + 50 + x_adjust) / 2, (int)curr_legs.get(1).y + y_adjust, left_leg.width * 0.5, left_leg.height * 0.5);
-        image(right_leg, (((int)curr_legs.get(0).x + x_adjust + (int)curr_top_block_scores.get(0).x + x_adjust) / 2) + 100, (int)curr_legs.get(0).y + y_adjust, right_leg.width * 0.5, right_leg.height * 0.5);
-      }
+      drawTao();
       
-      // Draw arms
-      if (curr_arms.get(0).x < curr_arms.get(1).x) {
-        image(left_arm, ((int)curr_arms.get(0).x + x_adjust + (int)curr_top_block_scores.get(0).x + 80 + x_adjust) / 2, (int)curr_arms.get(0).y + (left_arm.height * 0.6) + y_adjust, left_arm.width * 0.5, left_arm.height * 0.5);
-        image(right_arm, (((int)curr_arms.get(1).x + x_adjust + (int)curr_top_block_scores.get(0).x + 40 + x_adjust) / 2) + 100, (int)curr_arms.get(1).y + (right_arm.height * 0.6) + y_adjust, right_arm.width * 0.5, right_arm.height * 0.5);
-      } else {
-        image(left_arm, ((int)curr_arms.get(1).x + x_adjust + (int)curr_top_block_scores.get(0).x + 80 + x_adjust) / 2, (int)curr_arms.get(1).y + (left_arm.height * 0.6) + y_adjust, left_arm.width * 0.5, left_arm.height * 0.5);
-        image(right_arm, (((int)curr_arms.get(0).x + x_adjust + (int)curr_top_block_scores.get(0).x + 40 + x_adjust) / 2) + 100, (int)curr_arms.get(0).y + (right_arm.height * 0.6) + y_adjust, right_arm.width * 0.5, right_arm.height * 0.5);
-      }
-      
-      // draw body
-      image(body, (int)curr_top_block_scores.get(0).x + x_adjust, (int)curr_top_block_scores.get(0).y - (body.height * 0.25) + y_adjust, body.width * 0.5, body.height * 0.5);
+      drawGoku();
       
       m.read();
     }
@@ -247,6 +261,31 @@ void draw() {
     framenumber++;
     
   }
+}
+
+
+void drawGoku() {
+  //delay(10);
+  // draw legs
+  if (curr_legs.get(0).x < curr_legs.get(1).x) {
+    image(left_leg, ((int)curr_legs.get(0).x + x_adjust + (int)curr_top_block_scores.get(0).x + 50 + x_adjust) / 2, (int)curr_legs.get(0).y + y_adjust, left_leg.width * 0.5, left_leg.height * 0.5);
+    image(right_leg, (((int)curr_legs.get(1).x + x_adjust + (int)curr_top_block_scores.get(0).x + x_adjust) / 2) + 100, (int)curr_legs.get(1).y + y_adjust, right_leg.width * 0.5, right_leg.height * 0.5);
+  } else {
+    image(left_leg, ((int)curr_legs.get(1).x + x_adjust + (int)curr_top_block_scores.get(0).x + 50 + x_adjust) / 2, (int)curr_legs.get(1).y + y_adjust, left_leg.width * 0.5, left_leg.height * 0.5);
+    image(right_leg, (((int)curr_legs.get(0).x + x_adjust + (int)curr_top_block_scores.get(0).x + x_adjust) / 2) + 100, (int)curr_legs.get(0).y + y_adjust, right_leg.width * 0.5, right_leg.height * 0.5);
+  }
+  
+  // Draw arms
+  if (curr_arms.get(0).x < curr_arms.get(1).x) {
+    image(left_arm, ((int)curr_arms.get(0).x + x_adjust + (int)curr_top_block_scores.get(0).x + 80 + x_adjust) / 2, (int)curr_arms.get(0).y + (left_arm.height * 0.6) + y_adjust, left_arm.width * 0.5, left_arm.height * 0.5);
+    image(right_arm, (((int)curr_arms.get(1).x + x_adjust + (int)curr_top_block_scores.get(0).x + 40 + x_adjust) / 2) + 100, (int)curr_arms.get(1).y + (right_arm.height * 0.6) + y_adjust, right_arm.width * 0.5, right_arm.height * 0.5);
+  } else {
+    image(left_arm, ((int)curr_arms.get(1).x + x_adjust + (int)curr_top_block_scores.get(0).x + 80 + x_adjust) / 2, (int)curr_arms.get(1).y + (left_arm.height * 0.6) + y_adjust, left_arm.width * 0.5, left_arm.height * 0.5);
+    image(right_arm, (((int)curr_arms.get(0).x + x_adjust + (int)curr_top_block_scores.get(0).x + 40 + x_adjust) / 2) + 100, (int)curr_arms.get(0).y + (right_arm.height * 0.6) + y_adjust, right_arm.width * 0.5, right_arm.height * 0.5);
+  }
+  
+  // draw body
+  image(body, (int)curr_top_block_scores.get(0).x + x_adjust, (int)curr_top_block_scores.get(0).y - (body.height * 0.25) + y_adjust, body.width * 0.5, body.height * 0.5);
 }
 
 
@@ -321,5 +360,44 @@ void drawDot(int x, int y, int n) {
     ellipse(x, y, K, K);
     stroke(161, 233, 91);
     fill(161, 233, 91);
+  }
+}
+
+
+void tao_shoot() {
+  // pass
+}
+
+
+void drawTao() {
+  if (tao_left_bool) {
+    image(tao_left, 40, 320, tao_left.width * 0.7, tao_left.height * 0.7);
+  } else if (tao_right_bool) {
+    image(tao_right, 720, 320, tao_right.width * 0.7, tao_right.height * 0.7);
+  }
+}
+
+
+void keyPressed() {
+  if (key == CODED) {
+    if (keyCode == LEFT) {
+      if (tao_left_bool) {
+        tao_right_bool = false;
+        tao_left_bool = false;
+      } else {
+        tao_left_bool = true;
+        tao_right_bool = false;
+      }
+    } else if (keyCode == RIGHT) {
+      if (tao_right_bool) {
+        tao_right_bool = false;
+        tao_left_bool = false;
+      } else {
+        tao_right_bool = true;
+        tao_left_bool = false;
+      }
+    } else if (keyCode == ENTER) {
+      tao_shoot();
+    }
   }
 }
