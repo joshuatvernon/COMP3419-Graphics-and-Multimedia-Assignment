@@ -8,6 +8,11 @@ import java.util.*;
 import processing.video.*; 
 Movie m;
 
+import processing.sound.*;
+SoundFile scream;
+SoundFile explosionSound;
+SoundFile theme;
+
 // K must be odd
 int K = 35;
 int radius = 1;
@@ -27,12 +32,34 @@ PImage right_arm;
 PImage left_leg;
 PImage right_leg;
 PImage body;
+PImage energy;
+boolean goku_energized;
+int goku_left_margin;
+int goku_right_margin;
+
+// Allies
+PImage chiaotzu;
+int[] chiaotzu_coordinates;
+PImage puar;
+int[] puar_coordinates;
 
 // Mercenary Tao
 PImage tao_left;
 PImage tao_right;
+PImage blast;
+PImage explosion;
 boolean tao_left_bool = false;
 boolean tao_right_bool = false;
+
+// Villains
+PImage villain_1;
+PImage villain_2;
+PImage villain_3;
+PImage villain_4;
+PImage villain_5;
+PImage villain_6;
+boolean[] villains;
+int[][] villain_coordinates;
 
 PImage current_frame;
 
@@ -61,16 +88,23 @@ ArrayList<Score<Integer, Integer, Integer>> curr_arms = new ArrayList<Score<Inte
 ArrayList<Score<Integer, Integer, Integer>> curr_legs = new ArrayList<Score<Integer, Integer, Integer>>(2);
 Score<Integer, Integer, Integer> curr_body = null;
 
+ArrayList<int[]> blasts = new ArrayList<int[]>();
+ArrayList<int[]> explosions = new ArrayList<int[]>();
 
 void setup() { 
   // Just large enough to see what is happening
   size(1024, 576);
+  
   // Background
   background = loadImage("./img/background.png");
   cloud_left = loadImage("./img/cloud-left.png");
   cloud_right = loadImage("./img/cloud-right.png");
   cloud_left_x = 0;
   cloud_right_x = width;
+  
+  // Theme
+  theme = new SoundFile(this, sketchPath("./sounds/theme.mp3"));
+  theme.play();
 
   // Goku
   left_arm = loadImage("./img/left-arm.png");
@@ -78,9 +112,33 @@ void setup() {
   left_leg = loadImage("./img/left-leg.png");
   right_leg = loadImage("./img/right-leg.png");
   body = loadImage("./img/body.png");
+  energy = loadImage("./img/energy.png");
+  scream = new SoundFile(this, sketchPath("./sounds/scream.wav"));
+  scream.amp(0.4);
+  
+  // Allies
+  chiaotzu = loadImage("./img/chiaotzu.png");
+  puar = loadImage("./img/puar.png");
+  chiaotzu_coordinates = new int[] {100, 80};
+  puar_coordinates = new int[] {700, 200};
+  
   // Mercenary Tao
   tao_left = loadImage("./img/tao-left.png");
   tao_right = loadImage("./img/tao-right.png");
+  blast = loadImage("./img/blast.png");
+  explosion = loadImage("./img/explosion.png");
+  explosionSound = new SoundFile(this, sketchPath("./sounds/explosion.wav"));
+  
+  // Villains
+  villain_1 = loadImage("./img/villain-1.png");
+  villain_2 = loadImage("./img/villain-2.png");
+  villain_3 = loadImage("./img/villain-3.png");
+  villain_4 = loadImage("./img/villain-4.png");
+  villain_5 = loadImage("./img/villain-5.png");
+  villain_6 = loadImage("./img/villain-6.png");
+  villains = new boolean[] {false, false, false, false, false, false};
+  villain_coordinates = new int[6][2];
+
   // Fill colour
   fill(161, 233, 91);
   stroke(161, 233, 91);
@@ -251,9 +309,12 @@ void draw() {
         curr_top_block_scores.remove(legs_indexes[0]);
       }
       
+      drawAllies();
+      checkAllyCollision();
       drawTao();
-      
       drawGoku();
+      drawBlasts();
+      drawExplosions();
       
       m.read();
     }
@@ -264,7 +325,7 @@ void draw() {
 }
 
 
-void drawGoku() {
+void drawGoku() {  
   //delay(10);
   // draw legs
   if (curr_legs.get(0).x < curr_legs.get(1).x) {
@@ -277,13 +338,20 @@ void drawGoku() {
   
   // Draw arms
   if (curr_arms.get(0).x < curr_arms.get(1).x) {
-    image(left_arm, ((int)curr_arms.get(0).x + x_adjust + (int)curr_top_block_scores.get(0).x + 80 + x_adjust) / 2, (int)curr_arms.get(0).y + (left_arm.height * 0.6) + y_adjust, left_arm.width * 0.5, left_arm.height * 0.5);
-    image(right_arm, (((int)curr_arms.get(1).x + x_adjust + (int)curr_top_block_scores.get(0).x + 40 + x_adjust) / 2) + 100, (int)curr_arms.get(1).y + (right_arm.height * 0.6) + y_adjust, right_arm.width * 0.5, right_arm.height * 0.5);
+    goku_left_margin = ((int)curr_arms.get(0).x + x_adjust + (int)curr_top_block_scores.get(0).x + 80 + x_adjust) / 2;
+    goku_right_margin = (((int)curr_arms.get(1).x + x_adjust + (int)curr_top_block_scores.get(0).x + 40 + x_adjust) / 2) + 100;
+    image(left_arm, goku_left_margin, (int)curr_arms.get(0).y + (left_arm.height * 0.6) + y_adjust, left_arm.width * 0.5, left_arm.height * 0.5);
+    image(right_arm, goku_right_margin, (int)curr_arms.get(1).y + (right_arm.height * 0.6) + y_adjust, right_arm.width * 0.5, right_arm.height * 0.5);
   } else {
-    image(left_arm, ((int)curr_arms.get(1).x + x_adjust + (int)curr_top_block_scores.get(0).x + 80 + x_adjust) / 2, (int)curr_arms.get(1).y + (left_arm.height * 0.6) + y_adjust, left_arm.width * 0.5, left_arm.height * 0.5);
-    image(right_arm, (((int)curr_arms.get(0).x + x_adjust + (int)curr_top_block_scores.get(0).x + 40 + x_adjust) / 2) + 100, (int)curr_arms.get(0).y + (right_arm.height * 0.6) + y_adjust, right_arm.width * 0.5, right_arm.height * 0.5);
+    goku_left_margin = ((int)curr_arms.get(1).x + x_adjust + (int)curr_top_block_scores.get(0).x + 80 + x_adjust) / 2;
+    goku_right_margin = (((int)curr_arms.get(0).x + x_adjust + (int)curr_top_block_scores.get(0).x + 40 + x_adjust) / 2) + 100;
+    image(left_arm, goku_left_margin, (int)curr_arms.get(1).y + (left_arm.height * 0.6) + y_adjust, left_arm.width * 0.5, left_arm.height * 0.5);
+    image(right_arm, goku_right_margin, (int)curr_arms.get(0).y + (right_arm.height * 0.6) + y_adjust, right_arm.width * 0.5, right_arm.height * 0.5);
   }
   
+  if (goku_energized) {
+    image(energy, goku_left_margin - 110, (int)curr_top_block_scores.get(0).y - (body.height * 0.25) + y_adjust, energy.width, energy.height);
+  }
   // draw body
   image(body, (int)curr_top_block_scores.get(0).x + x_adjust, (int)curr_top_block_scores.get(0).y - (body.height * 0.25) + y_adjust, body.width * 0.5, body.height * 0.5);
 }
@@ -364,16 +432,117 @@ void drawDot(int x, int y, int n) {
 }
 
 
+void drawExplosions() {
+  ArrayList<Integer> blast_indexes_to_remove = new ArrayList<Integer>();
+  for (int i = 0; i < blasts.size(); i++) {
+    // update blasts coordinates
+    blasts.get(i)[0] += blasts.get(i)[2];
+    // check if blast has hit goku
+    if (blasts.get(i)[0] > goku_left_margin && blasts.get(i)[0] < goku_right_margin) {
+      blast_indexes_to_remove.add(i);
+      // play explosion sound
+      explosionSound.play();
+      int[] newExplosion = new int[] {blasts.get(i)[0], 10};
+      explosions.add(newExplosion);
+    }
+  }
+  ArrayList<Integer> explosion_indexes_to_remove = new ArrayList<Integer>();
+  for (int i = 0; i < explosions.size(); i++) {
+    // display explosion image
+    image(explosion, explosions.get(i)[0], 400, explosion.width / 2, explosion.height / 2);
+    explosions.get(i)[1] -= 1;
+    if (explosions.get(i)[1] == 0) {
+      explosion_indexes_to_remove.add(i);
+    }
+  }
+  for (int i = 0; i < blast_indexes_to_remove.size(); i++) {
+    blasts.remove(int(blast_indexes_to_remove.get(i)));
+  }
+  for (int i = 0; i < explosion_indexes_to_remove.size(); i++) {
+    explosions.remove(int(explosion_indexes_to_remove.get(i)));
+  }
+}
+
+
+void drawBlasts() {
+  for (int i = 0; i < blasts.size(); i++) {
+    // draw blast
+    image(blast, blasts.get(i)[0], blasts.get(i)[1], blast.width * 0.4, blast.height * 0.4);
+    // update blasts coordinates
+    blasts.get(i)[0] += blasts.get(i)[2];
+  }
+}
+
+
 void tao_shoot() {
-  // pass
+  int[] blast = new int[3];
+  if (tao_left_bool) {
+    blast[0] = 30 + int(tao_left.width * 0.8);
+    blast[2] = int(random(3, 10));
+  } else {
+    blast[0] = 680;
+    blast[2] = int(random(-10, -3));
+  }
+  blast[1] = 400;
+  
+  blasts.add(blast);
 }
 
 
 void drawTao() {
   if (tao_left_bool) {
-    image(tao_left, 40, 320, tao_left.width * 0.7, tao_left.height * 0.7);
+    image(tao_left, 30, 320, tao_left.width * 0.8, tao_left.height * 0.8);
   } else if (tao_right_bool) {
-    image(tao_right, 720, 320, tao_right.width * 0.7, tao_right.height * 0.7);
+    image(tao_right, 680, 320, tao_right.width * 0.8, tao_right.height * 0.8);
+  }
+}
+
+
+void drawAllies() {
+  chiaotzu_coordinates[0] = (int)((chiaotzu_coordinates[0] + random(-7, 12)) % width);
+  if (puar_coordinates[0] <= 0) {
+    puar_coordinates[0] = width;
+  }
+  puar_coordinates[0] = (int)((puar_coordinates[0] + random(-12, 7)) % width);
+  image(chiaotzu, chiaotzu_coordinates[0], chiaotzu_coordinates[1], chiaotzu.width, chiaotzu.height);
+  image(puar, puar_coordinates[0], puar_coordinates[1], puar.width / 7, puar.height / 7);
+}
+
+
+void checkAllyCollision() {
+  boolean just_energized = false;
+  if ((chiaotzu_coordinates[0] > goku_left_margin && chiaotzu_coordinates[0] < goku_right_margin) || (puar_coordinates[0] > goku_left_margin && puar_coordinates[0] < goku_right_margin)) {
+    if (!goku_energized) {
+      just_energized = true;
+    }
+    goku_energized = true;
+  } else {
+    goku_energized = false;
+  }
+  if (just_energized) {
+    scream.play();
+  }
+}
+
+
+void drawVillains() {
+  if (villains[0] == true) {
+    image(villain_1, 0, 0, villain_1.width, villain_1.height);
+  }
+  if (villains[1] == true) {
+    image(villain_2, 0, 0, villain_2.width, villain_2.height);
+  }
+  if (villains[2] == true) {
+    image(villain_3, 0, 0, villain_3.width, villain_3.height);
+  }
+  if (villains[3] == true) {
+    image(villain_4, 0, 0, villain_4.width, villain_4.height);
+  }
+  if (villains[4] == true) {
+    image(villain_5, 0, 0, villain_5.width, villain_5.height);
+  }
+  if (villains[5] == true) {
+    image(villain_6, 0, 0, villain_6.width, villain_6.height);
   }
 }
 
@@ -396,8 +565,10 @@ void keyPressed() {
         tao_right_bool = true;
         tao_left_bool = false;
       }
-    } else if (keyCode == ENTER) {
-      tao_shoot();
+    } else if (keyCode == SHIFT) {
+      if (tao_left_bool || tao_right_bool) {
+        tao_shoot();
+      }
     }
   }
 }
