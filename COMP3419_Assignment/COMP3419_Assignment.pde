@@ -11,10 +11,20 @@ Movie m;
 // K must be odd
 int K = 35;
 int radius = 1;
+int x_adjust = 180;
+int y_adjust = 160;
+
+// Background
+PImage background;
+PImage left_arm;
+PImage right_arm;
+PImage left_leg;
+PImage right_leg;
+PImage body;
 
 PImage current_frame;
 
-int phase = 1;
+int phase = 2;
 int framenumber = 0;
 int m_frames = 0;
 
@@ -42,7 +52,14 @@ Score<Integer, Integer, Integer> curr_body = null;
 
 void setup() { 
   // Just large enough to see what is happening
-  size(568, 320);
+  size(1024, 576);
+  // Background
+  background = loadImage("./img/background.png");
+  left_arm = loadImage("./img/left-arm.png");
+  right_arm = loadImage("./img/right-arm.png");
+  left_leg = loadImage("./img/left-leg.png");
+  right_leg = loadImage("./img/right-leg.png");
+  body = loadImage("./img/body.png");
   // Fill colour
   fill(161, 233, 91);
   stroke(161, 233, 91);
@@ -98,15 +115,15 @@ void draw() {
   float time = m.time();
   float duration = m.duration();
   
-  // Handle phase events
-  if (phase == 1 && time >= duration) {
-    m.jump(0);
-    phase = 2;
-    m_frames = framenumber - 1;
-    framenumber = 0;
-  } else if (phase == 2 && framenumber >= m_frames) {
-    exit();
-  }
+  //// Handle phase events
+  //if (phase == 1 && time >= duration) {
+  //  m.jump(0);
+  //  phase = 2;
+  //  m_frames = framenumber - 1;
+  //  framenumber = 0;
+  //} else if (phase == 2 && framenumber >= m_frames) {
+  //  exit();
+  //}
   
   if (m.available()) {
     if (phase == 1) {
@@ -120,7 +137,7 @@ void draw() {
       
       binariseImage();
       
-      image(current_frame, 0, 0);
+      image(background, 0, 0, 1024, 576);
       
       ArrayList<Score<Integer, Integer, Integer>> block_scores = new ArrayList<Score<Integer, Integer, Integer>>();
       
@@ -176,15 +193,6 @@ void draw() {
         curr_top_block_scores.remove(arms_indexes[0]);
       }
       
-      // Draw arms
-      if (curr_arms.get(0).x < curr_arms.get(1).x) {
-        drawDot((int)curr_arms.get(0).x, (int)curr_arms.get(0).y, 0);
-        drawDot((int)curr_arms.get(1).x, (int)curr_arms.get(1).y, 1);
-      } else {
-        drawDot((int)curr_arms.get(0).x, (int)curr_arms.get(0).y, 1);
-        drawDot((int)curr_arms.get(1).x, (int)curr_arms.get(1).y, 0);
-      }
-      
       // find legs
       curr_legs.clear();
       curr_legs.add(curr_top_block_scores.get(0));
@@ -211,19 +219,27 @@ void draw() {
         curr_top_block_scores.remove(legs_indexes[0]);
       }
       
-      // Draw legs
+      //delay(10);
+      // draw legs
       if (curr_legs.get(0).x < curr_legs.get(1).x) {
-        drawDot((int)curr_legs.get(0).x, (int)curr_legs.get(0).y, 2);
-        drawDot((int)curr_legs.get(1).x, (int)curr_legs.get(1).y, 3);
+        image(left_leg, ((int)curr_legs.get(0).x + x_adjust + (int)curr_top_block_scores.get(0).x + 50 + x_adjust) / 2, (int)curr_legs.get(0).y + y_adjust, left_leg.width * 0.5, left_leg.height * 0.5);
+        image(right_leg, (((int)curr_legs.get(1).x + x_adjust + (int)curr_top_block_scores.get(0).x + x_adjust) / 2) + 100, (int)curr_legs.get(1).y + y_adjust, right_leg.width * 0.5, right_leg.height * 0.5);
       } else {
-        drawDot((int)curr_legs.get(0).x, (int)curr_legs.get(0).y, 3);
-        drawDot((int)curr_legs.get(1).x, (int)curr_legs.get(1).y, 2);
+        image(left_leg, ((int)curr_legs.get(1).x + x_adjust + (int)curr_top_block_scores.get(0).x + 50 + x_adjust) / 2, (int)curr_legs.get(1).y + y_adjust, left_leg.width * 0.5, left_leg.height * 0.5);
+        image(right_leg, (((int)curr_legs.get(0).x + x_adjust + (int)curr_top_block_scores.get(0).x + x_adjust) / 2) + 100, (int)curr_legs.get(0).y + y_adjust, right_leg.width * 0.5, right_leg.height * 0.5);
+      }
+      
+      // Draw arms
+      if (curr_arms.get(0).x < curr_arms.get(1).x) {
+        image(left_arm, ((int)curr_arms.get(0).x + x_adjust + (int)curr_top_block_scores.get(0).x + 80 + x_adjust) / 2, (int)curr_arms.get(0).y + (left_arm.height * 0.6) + y_adjust, left_arm.width * 0.5, left_arm.height * 0.5);
+        image(right_arm, (((int)curr_arms.get(1).x + x_adjust + (int)curr_top_block_scores.get(0).x + 40 + x_adjust) / 2) + 100, (int)curr_arms.get(1).y + (right_arm.height * 0.6) + y_adjust, right_arm.width * 0.5, right_arm.height * 0.5);
+      } else {
+        image(left_arm, ((int)curr_arms.get(1).x + x_adjust + (int)curr_top_block_scores.get(0).x + 80 + x_adjust) / 2, (int)curr_arms.get(1).y + (left_arm.height * 0.6) + y_adjust, left_arm.width * 0.5, left_arm.height * 0.5);
+        image(right_arm, (((int)curr_arms.get(0).x + x_adjust + (int)curr_top_block_scores.get(0).x + 40 + x_adjust) / 2) + 100, (int)curr_arms.get(0).y + (right_arm.height * 0.6) + y_adjust, right_arm.width * 0.5, right_arm.height * 0.5);
       }
       
       // draw body
-      drawDot((int)curr_top_block_scores.get(0).x, (int)curr_top_block_scores.get(0).y, 4);
-      
-      drawGrid();
+      image(body, (int)curr_top_block_scores.get(0).x + x_adjust, (int)curr_top_block_scores.get(0).y - (body.height * 0.25) + y_adjust, body.width * 0.5, body.height * 0.5);
       
       m.read();
     }
